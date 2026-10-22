@@ -76,4 +76,6 @@ Esercizio: trovare il numero totale di tutti i file nella directory corrente. So
 ls -RAl | grep -E "^d|-" | wc -l
 ```
 
+Questo ci permette di listare tutte le directory ricorsivamente, mostrando *quasi* tutto (`-A` ci evita infatti che venga mostrata per ogni directory il `.` della directory stessa e `..` della directory sovrastante) e in formato list. Poi facciamo la `grep` abilitando le regex con `-E`. Quello che diciamo con quell'espressione è che deve iniziare o con la lettera d o col - (o è un file o una directory). Si potrebbe estendere anche agli altri tipi di file (c, b, ecc.). A dire che deve cominciare con una o (|) con l'altra c'è `^`, che in gergo viene chiamata **ancora**.
+
 C'è poi il comando `tar`, che ci permette di lavorare con gli archivi compressi.
