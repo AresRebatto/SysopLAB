@@ -1,4 +1,4 @@
-# La Shell
+# La Shell - parte I
 
 Oggi approfondiamo la shell. La filosofia Linux è quella di usare tanti piccoli programmi iperspecializzati, in contrasto con la visione di Windows.
 
@@ -249,35 +249,27 @@ In generale, si può costruire una tabella con i comandi visti nella lezione (sl
 
       - `log3.txt`: `WARNING`, `WARNING`, `INFO`
 
-
-
 ## Soluzioni
 
-1.
+1. 
 
 ```sh
 ls /usr/bin | grep "bash" | wc -l
 ```
 
-
-
-2.
+2. 
 
 ```sh
 ls /usr/bin | sort -dr | head -n 5
 ```
 
-
-
-3.
+3. 
 
 ```sh
 ps aux | grep "bash" | tr -s ' ' | cut -d' ' -f1 | wc -l
 ```
 
-
-
-4.
+4. 
 
 ```sh
 [ ! -d /analisi ] && mkdir /analisi;
