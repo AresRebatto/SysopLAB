@@ -212,8 +212,6 @@ La pipeline esamina l'elenco dei processi, filtra le righe che contengono entram
 
 - `sort -nr`: ordina i PID numericamente in ordine decrescente.
 
-Attenzione: i due `grep` cercano le stringhe nell'intera riga, non necessariamente nella colonna dell'utente e in quella del comando. Inoltre, comprimere gli spazi non elimina eventuali spazi iniziali, che potrebbero alterare la selezione dei campi.
-
 Concetto chiave: `tr -s` normalizza i separatori ripetuti, mentre `cut` estrae un campo individuato tramite delimitatore e posizione.
 
 ## 10. Contare le chiamate di sistema il cui nome corrisponde a una certa espressione regolare
@@ -257,7 +255,8 @@ Concetto chiave: una regex permette di filtrare i nomi in base alla loro struttu
 
 ```
 find -user root -type f -size +50k | 
-sed "s/ /-/g" | xargs du -k | 
+xargs du -k | 
+sed "s/ /-/g" |
 sed "s/\t/-/g" | grep -E "^[0-9]{6}" | 
 sort -nr
 ```
@@ -268,16 +267,14 @@ La pipeline cerca i file appartenenti all'utente `aresr` che superano una certa 
 
 - `find -user root-type f -size +50k`: cerca i file regolari appartenenti all'utente `root` e con dimensione superiore a 50 KiB.
 
-- `sed "s/ /-/g"`: sostituisce ogni spazio nei percorsi con un trattino.
-
 - `xargs du -k`: esegue `du -k` sui percorsi ricevuti, mostrando lo spazio occupato in kilobyte.
+
+- `sed "s/ /-/g"`: sostituisce ogni spazio nei percorsi con un trattino.
 
 - `sed "s/\t/-/g"`: sostituisce i caratteri di tabulazione nell'output di `du` con trattini.
 
 - `grep -E "^[0-9]{6}"`: seleziona le righe che iniziano con esattamente sei cifre consecutive. Il simbolo `^` indica l'inizio della riga e `{6}` richiede sei ripetizioni della cifra precedente.
 
 - `sort -nr`: ordina le righe in base al valore numerico iniziale, dal maggiore al minore.
-
-Attenzione: questa soluzione presenta un problema: sostituire gli spazi nei percorsi con trattini non modifica i nomi reali dei file. Di conseguenza, `xargs du` potrebbe cercare percorsi inesistenti. Inoltre, `du -k` misura lo spazio occupato su disco, non necessariamente la dimensione effettiva del file.
 
 Concetto chiave: per selezionare dimensioni con un numero preciso di cifre, un'espressione regolare come `^[0-9]{6}` è sufficiente; occorre però distinguere la dimensione effettiva del file dallo spazio occupato su disco.
