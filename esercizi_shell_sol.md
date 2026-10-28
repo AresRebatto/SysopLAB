@@ -131,22 +131,12 @@ La pipeline cerca in `/var/log` i file che superano i 50 MB, ne calcola la dimen
 
 Concetto chiave: `-print0` e `xargs -0` permettono di passare nomi di file contenenti spazi senza suddividerli erroneamente.
 
-Variante più leggibile:
-
-```
-[ -d /var/log ] && 
-find /var/log -type f -size +50M -print0 2>/dev/null |
-xargs -0 -I{} du -h {} 2>/dev/null |
-sort -hr
-```
-
-Qui `du -h` mostra dimensioni leggibili, come `60M` o `1.2G`, e `sort -hr` le ordina in base al valore numerico riconosciuto. La variante è più comoda da leggere, ma il formato delle dimensioni può variare in funzione delle unità utilizzate.
-
 ## 7. Individuare la chiamata di sistema più frequente durante `df -hT`
 
 ```
 strace -f df -hT 2>&1 | 
 cut -d'(' -f1 | 
+sort |
 uniq -c | 
 sort -nr | 
 head -n 1
@@ -168,16 +158,7 @@ La pipeline esegue `df -hT` sotto osservazione tramite `strace` e cerca la riga 
 
 - `head -n 1`: mantiene soltanto la prima riga, cioè quella con il conteggio maggiore.
 
-Attenzione: `uniq -c` conta soltanto le occorrenze consecutive. Se lo stesso nome compare in punti diversi dell'output, il conteggio può essere suddiviso in più gruppi. Per ottenere il conteggio globale corretto, bisogna prima ordinare le righe:
-
-```
-strace -f df -hT 2>&1 |
-cut -d'(' -f1 |
-sort |
-uniq -c |
-sort -nr |
-head -n 1
-```
+Attenzione: `uniq -c` conta soltanto le occorrenze consecutive. Se lo stesso nome compare in punti diversi dell'output, il conteggio può essere suddiviso in più gruppi. Per questo le raggruppiamo con `sort` prima.
 
 Concetto chiave: per contare tutte le occorrenze di una stessa riga con `uniq -c`, è necessario raggrupparle prima con `sort`.
 
@@ -205,12 +186,6 @@ La pipeline verifica l'esistenza di `/etc/passwd`, elimina le righe che contengo
 - `uniq -c`: raggruppa le righe identiche consecutive e ne conta le occorrenze.
 
 - `wc -l`: conta le righe prodotte da `uniq -c`.
-
-Attenzione: `wc -l` non conta direttamente gli utenti: conta i gruppi di righe rimasti dopo `uniq`. Se l'obiettivo è semplicemente contare le righe che superano il filtro, è sufficiente:
-
-```
-[ -f /etc/passwd ] && grep -Ev 'nologin|false' /etc/passwd | wc -l
-```
 
 Concetto chiave: `grep -v` esclude le righe corrispondenti al modello specificato, mentre `wc -l` conta le righe dell'output.
 
@@ -245,7 +220,7 @@ Concetto chiave: `tr -s` normalizza i separatori ripetuti, mentre `cut` estrae u
 
 ```
 strace df -h 2>&1 | grep -iE "^s.[aeiou]" | 
-cut -d'(' -f1 | uniq -c | sort -nr
+cut -d'(' -f1 | sort | uniq -c | sort -nr
 ```
 
 **Spiegazione**
@@ -276,19 +251,12 @@ La pipeline esegue `df -h` sotto osservazione tramite `strace`, seleziona alcune
 
 - `sort -nr`: ordina i conteggi dal maggiore al minore.
 
-Attenzione: come nell'esercizio 7, `uniq -c` non aggrega le occorrenze separate da altre righe. Per ottenere i conteggi complessivi, aggiungi `sort` prima di `uniq -c`.
-
-```
-strace df -h 2>&1 | grep -iE "^s.[aeiou]" |
-cut -d'(' -f1 | sort | uniq -c | sort -nr
-```
-
 Concetto chiave: una regex permette di filtrare i nomi in base alla loro struttura, mentre `sort | uniq -c` consente di contare globalmente le occorrenze identiche.
 
-## 11. Trovare i file di `aresr` più grandi di 50 KB, con dimensione di sei cifre
+## 11. Trovare i file di `root` più grandi di 50 KB, con dimensione di sei cifre
 
 ```
-find -user aresr -type f -size +50k | 
+find -user root -type f -size +50k | 
 sed "s/ /-/g" | xargs du -k | 
 sed "s/\t/-/g" | grep -E "^[0-9]{6}" | 
 sort -nr
@@ -298,7 +266,7 @@ sort -nr
 
 La pipeline cerca i file appartenenti all'utente `aresr` che superano una certa dimensione, calcola il loro spazio occupato in kilobyte, seleziona quelli la cui dimensione riportata ha sei cifre e ordina i risultati numericamente in ordine decrescente.
 
-- `find -user aresr -type f -size +50k`: cerca i file regolari appartenenti all'utente `aresr` e con dimensione superiore a 50 KiB.
+- `find -user root-type f -size +50k`: cerca i file regolari appartenenti all'utente `root` e con dimensione superiore a 50 KiB.
 
 - `sed "s/ /-/g"`: sostituisce ogni spazio nei percorsi con un trattino.
 
@@ -312,22 +280,4 @@ La pipeline cerca i file appartenenti all'utente `aresr` che superano una certa 
 
 Attenzione: questa soluzione presenta un problema: sostituire gli spazi nei percorsi con trattini non modifica i nomi reali dei file. Di conseguenza, `xargs du` potrebbe cercare percorsi inesistenti. Inoltre, `du -k` misura lo spazio occupato su disco, non necessariamente la dimensione effettiva del file.
 
-Una variante più semplice, senza `awk` né cicli, che seleziona i file in base alla dimensione effettiva in byte di sei cifre è:
-
-```
-find -user aresr -type f -printf '%s %p\n' |
-grep -E '^[0-9]{6} ' |
-sort -nr
-```
-
-- `-printf '%s %p\n'`: stampa la dimensione in byte (`%s`), seguita dal percorso (`%p`).
-
-- `grep -E '^[0-9]{6} '`: seleziona le righe con una dimensione di sei cifre.
-
-- `sort -nr`: ordina i risultati in base alla dimensione.
-
-Questa variante presuppone che i nomi dei file non contengano caratteri di nuova riga.
-
 Concetto chiave: per selezionare dimensioni con un numero preciso di cifre, un'espressione regolare come `^[0-9]{6}` è sufficiente; occorre però distinguere la dimensione effettiva del file dallo spazio occupato su disco.
-
-
